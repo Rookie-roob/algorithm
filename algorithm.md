@@ -164,3 +164,112 @@ int main()
 }
 ```
 ---
+
+
+
+* 都是正整数时的给定目标和的长度最小的子数组
+
+​	给定一个含有 `n` 个正整数的数组和一个正整数 `target` **。**
+
+​	找出该数组中满足其总和大于等于 `target` 的长度最小的 **连续子数组** `[numsl, numsl+1, ..., numsr-1, numsr]` ，并返回其长度**。**如果不存在符合条件的子数组，返回 `0` 。
+
+
+
+题解：运用双指针的思想，给定slow，fast不断向前移动，直到当前区间的和大于等于target，此时前移slow，直到当前区间的和小于target，这一步相当于是在放缩满足条件的区间，放缩完毕后，此时slow到达了第一次不满足的点，再固定slow，重复上面的过程，直到fast移出了数组，步骤结束。
+
+
+
+相关函数如下：
+
+```c++
+class Solution {
+public:
+    int minSubArrayLen(int target, vector<int>& nums) {
+        int tmp = 0;
+        int res = 1e5+10;
+        int slow = 0;
+        for(int fast = 0;fast<nums.size();fast++)
+        {
+            tmp+=nums[fast];
+            if(tmp>=target)
+            {
+                while(slow<=fast)
+                {
+                    tmp-=nums[slow];
+                    if(tmp<target)
+                    {
+                        break;
+                    }
+                    slow++;
+                }
+                res=min(res,fast-slow+1);
+                slow++;
+            }
+        }
+        if (res<=1e5)
+            return res;
+        else
+            return 0;
+    }
+};
+```
+
+* 环形链表
+
+给定一个链表的头节点  `head` ，返回链表开始入环的第一个节点。 *如果链表无环，则返回 `null`。*
+
+如果链表中有某个节点，可以通过连续跟踪 `next` 指针再次到达，则链表中存在环。 为了表示给定链表中的环，评测系统内部使用整数 `pos` 来表示链表尾连接到链表中的位置（**索引从 0 开始**）。如果 `pos` 是 `-1`，则在该链表中没有环。**注意：`pos` 不作为参数进行传递**，仅仅是为了标识链表的实际情况。
+
+**不允许修改** 链表。
+
+**想法**：一个快指针，一个慢指针，这个在之前的练习中可以想得到，但是下一步是从起点出发，从相遇点出发并再次相遇，后面的这个思路很重要。
+
+即：
+
+ //m+n=x
+
+ //m+n+k*cycle=2*x
+
+ //m+n=k*cycle
+
+ //m=k*cycle-n=(k>=1)(k-1)cycle+(cycle-n)
+
+代码如下：
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+ //m+n=x
+ //m+n+k*cycle=2*x
+ //m+n=k*cycle
+ //m=k*cycle-n=(k>=1)(k-1)cycle+(cycle-n)
+class Solution {
+public:
+    ListNode *detectCycle(ListNode *head) {
+        if(head==NULL) return NULL;
+        ListNode* fast=head;
+        ListNode* slow=head;
+        do {
+            fast=fast->next;
+            if(!fast) return NULL;
+            fast=fast->next;
+            if(!fast) return NULL;
+            slow=slow->next;
+        } while(fast!=slow);
+        slow=head;
+        while(slow!=fast)
+        {
+            slow=slow->next;
+            fast=fast->next;
+        }
+        return slow;
+    }
+};
+```
+
