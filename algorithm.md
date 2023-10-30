@@ -272,4 +272,115 @@ public:
     }
 };
 ```
+* 四数之和
+给你四个整数数组 nums1、nums2、nums3 和 nums4 ，数组长度都是 n ，请你计算有多少个元组 (i, j, k, l) 能满足：
 
+0 <= i, j, k, l < n
+nums1[i] + nums2[j] + nums3[k] + nums4[l] == 0
+
+**想法**：要把时间复杂度尽量控制到n^2，而不要让时间复杂度到n^3，代码如下：
+```c++
+#include<unordered_map>
+class Solution {
+public:
+    int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4) {
+        unordered_map<int,int> map;
+       for(auto num1:nums1)
+       {
+           for(auto num2:nums2)
+           {
+               map[num1+num2]++;
+           }
+       } 
+       int res=0;
+       for(auto num3:nums3)
+       {
+           for(auto num4:nums4)
+           {
+               if(map.count(-num3-num4))
+               {
+                   res+=map[-num3-num4];
+               }
+           }
+       }
+       return res;
+    }
+};
+```
+* 同一个数组中找到三数之和为0
+给你一个整数数组 nums ，判断是否存在三元组 [nums[i], nums[j], nums[k]] 满足 i != j、i != k 且 j != k ，同时还满足 nums[i] + nums[j] + nums[k] == 0 。请
+
+你返回所有和为 0 且不重复的三元组。
+
+注意：答案中不可以包含重复的三元组。
+
+**方法1**：运用哈希表的方法，将原本暴力的三维转化为二维，但是这个过程中要对于a，b，c分别去重
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ans;
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<nums.size();i++)
+        {
+            if(nums[i]>0) break;
+            if(i>0&&nums[i]==nums[i-1])
+                continue;
+            unordered_set<int> set;
+            for(int j=(i+1);j<nums.size();j++)
+            {
+                if(j>(i+2)&&nums[j]==nums[j-1]&&nums[j-1]==nums[j-2])//对于b去重
+                    continue;
+                int c = -nums[i]-nums[j];
+                if(set.find(c)!=set.end())
+                {
+                    ans.push_back({nums[i],nums[j],c});
+                    set.erase(c);//当有连续两个数相等时，对于c进行去重
+                }
+                else
+                    set.insert(nums[j]);
+            }
+        }
+        return ans;
+    }
+};
+```
+**方法2**：双指针
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        vector<vector<int>> ans;
+        sort(nums.begin(),nums.end());
+        for(int i=0;i<nums.size();i++)
+        {
+            if(nums[i]>0) break;
+            if(i>0&&nums[i]==nums[i-1])
+                continue;
+            int l = i+1;
+            int r = nums.size()-1;
+            while(l<r)
+            {
+                if(nums[i]+nums[l]+nums[r]>0)
+                {
+                    r--;
+                }
+                else if(nums[i]+nums[l]+nums[r]<0)
+                {
+                    l++;
+                }
+                else
+                {
+                    ans.push_back({nums[i],nums[l],nums[r]});
+                    while(r>l&&nums[r]==nums[r-1]) r--;// 去重
+                    while(r>l&&nums[l]==nums[l+1]) l++;// 去重
+                    l++;
+                    r--;
+                }
+                
+            }
+        }
+        return ans;
+    }
+};
+```
