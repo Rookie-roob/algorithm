@@ -384,3 +384,187 @@ public:
     }
 };
 ```
+
+
+
+* 单词的翻转
+
+给你一个字符串 `s` ，请你反转字符串中 **单词** 的顺序。
+
+**单词** 是由非空格字符组成的字符串。`s` 中使用至少一个空格将字符串中的 **单词** 分隔开。
+
+返回 **单词** 顺序颠倒且 **单词** 之间用单个空格连接的结果字符串。
+
+**注意：**输入字符串 `s`中可能会存在前导空格、尾随空格或者单词间的多个空格。返回的结果字符串中，单词间应当仅用单个空格分隔，且不包含任何额外的空格。
+
+
+
+**难点** ：难点在于O(1)的空间复杂度，考虑先将多余的空格给删除，调用erase不是很理智，时间复杂度可能会到达O(n^2)，采用双指针的方式进行翻转，slow相当于遍历现在的字符串，fast相当于遍历原先的字符串。而后翻转可以看作先翻转整个字符串，再翻转之中的每个单词。
+
+得到代码如下：
+
+```c++
+class Solution {
+public:
+    void removeWhiteSpace(string& s)
+    {
+        int fast=0;
+        int slow=0;
+        while(fast<s.length()&&s[fast]==' ')
+        {
+            fast++;
+        }
+        for(fast=fast;fast<s.length();fast++)
+        {
+            if(fast>0&&s[fast]==s[fast-1]&&s[fast]==' ')
+                continue;
+            else
+                s[slow++]=s[fast];
+        }
+        slow--;
+        for(slow;slow>0;slow--)
+        {
+            if(s[slow]!=' ')
+                break;
+        }
+        s.resize(slow+1);
+    }
+    void reversestring(string& s,int start,int end)
+    {
+        for(int i=start;i<=(start+end)/2;i++)
+        {
+            swap(s[i],s[start+end-i]);
+        }
+    }
+    string reverseWords(string s) {
+        removeWhiteSpace(s);
+        reversestring(s,0,s.length()-1);
+        int former=0;
+        int latter=0;
+        int index;
+        while(former<s.length())
+        {
+            for(index=former;index<s.length();index++)
+            {
+                if((s[index]==' ')||(index==(s.length()-1)))
+                    break;
+            }
+            if(s[index]==' ')
+                index--;
+            latter=index;
+            reversestring(s,former,latter);
+            former=latter+2;
+        }
+        return s;
+    }   
+};
+```
+
+* 重复的子字符串
+
+给定一个非空的字符串 `s` ，检查是否可以通过由它的一个子串重复多次构成。
+
+**想法**：1. 运用KMP的思想。   2. 运用移动匹配的思想，去头去尾后查找原字符串，若能找到，则有重复子串。证明方式如下：
+
+t=s+s，设去头去尾后s在t中的起始位置为i，有i大于0且i小于n，有s[0:n-1]=t[i:n+i-1]，以前一个s和后一个s的边界进行划分，则有s[0:n-i-1]=t[i:n-1]且s[n-i:n-1]=t[n:n+i-1]=t[0:i-1]，将t对应回s，则有s[0:n-i-1]=s[i:n-1]，s[n-i:n-1]=s[0:i-1]，相当于将s的前i个字符保持不变，移动到s的末尾，得到的新字符串与s相同，即在模n的意义下，有s[j]=s[j+i]，这对于任意的j都成立。不断地连写这个等式则有：
+
+**s[j]=s[j+i]=s[j+2i]=...**
+
+那么所有满足j0=j+k*i的位置 j0都有 s[j]=s[j0]，j 和 j0在模 i的意义下等价。由于我们已经在模 n 的意义下讨论这个问题，因此 j 和 j0在模 gcd(n,i) 的意义下等价，其中 gcd表示最大公约数。也就是说，字符串 sss 中的两个位置如果在模 gcd(n,i) 的意义下等价，那么它们对应的字符必然是相同的。
+
+由于 gcd(n,i)一定是 n 的约数，那么字符串 s一定可以由其长度为 gcd(n,i)的前缀重复 n/gcd(n,i)次构成。
+
+**方法1**
+
+```c++
+class Solution {
+public:
+    bool repeatedSubstringPattern(string s) {
+        int j=-1;
+        vector<int> next(s.length(),-1);
+        for(int i=1;i<s.length();i++)
+        {
+            while(j>=0&&s[i]!=s[j+1])
+            {
+                j=next[j];
+            }
+            if(s[i]==s[j+1])
+                j++;
+            next[i]=j;
+        }
+        if(next[s.length()-1]==-1) return false;
+        if((s.length()%(s.length()-next[s.length()-1]-1))==0) return true;
+        else return false;
+    }
+};
+```
+
+**方法2**
+
+```c++
+class Solution {
+public:
+    bool repeatedSubstringPattern(string s) {
+        int j=-1;
+        vector<int> next(s.length(),-1);
+        for(int i=1;i<s.length();i++)
+        {
+            while(j>=0&&s[i]!=s[j+1])
+            {
+                j=next[j];
+            }
+            if(s[i]==s[j+1])
+                j++;
+            next[i]=j;
+        }
+        if(next[s.length()-1]==-1) return false;
+        if((s.length()%(s.length()-next[s.length()-1]-1))==0) return true;
+        else return false;
+    }
+};
+```
+
+* 滑动窗口最大值
+
+给你一个整数数组 `nums`，有一个大小为 `k` 的滑动窗口从数组的最左侧移动到数组的最右侧。你只可以看到在滑动窗口内的 `k` 个数字。滑动窗口每次只向右移动一位。
+
+返回 *滑动窗口中的最大值* 。
+
+**思路**：运用单调队列的思想来做，最大值在头部，但是要保证头部所对应的index满足滑动窗口大小的条件，尾部用于添加新数据，但是这里如果原来的尾部index对应的值已经小于等于将要加入队列的值，此时应该将尾部往左移，因为原本的这个值永远都不会进行输出，在这两个过程中还要考虑队列tt>=hh的条件。
+
+则代码实现如下：
+
+```c++
+const int N = 1e5+10;
+int qu[N];
+int tt,hh;
+class Solution {
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        tt=-1;
+        hh=0;
+        if(nums.size()<k)
+        {
+            vector<int> v;
+            return v;
+        }
+        vector<int> ans(nums.size()-k+1,0);
+        for(int i=0;i<nums.size();i++)
+        {
+            while(((hh<=tt)&&((i-qu[hh]+1)>k)))
+            {
+                ++hh;
+            }
+            while(((hh<=tt)&&(nums[qu[tt]]<=nums[i])))
+                tt--;
+            qu[++tt]=i;
+            if(i>=(k-1))
+            {
+                ans[i-k+1]=nums[qu[hh]];
+            }
+        }
+        return ans;
+    }
+};
+```
+
