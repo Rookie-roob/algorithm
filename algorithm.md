@@ -568,3 +568,319 @@ public:
 };
 ```
 
+* 前k个高频的元素
+
+给你一个整数数组 `nums` 和一个整数 `k` ，请你返回其中出现频率前 `k` 高的元素。你可以按 **任意顺序** 返回答案。
+
+ **思路**：维护一个大小为k的小顶堆，当堆的大小大于k时，将堆顶的元素出堆，最后倒叙把堆中的元素输出（因为堆顶的为较小频率的值）。看到要对于频率进行排序，想到运用大顶堆或者小顶堆。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    class mycomparison {
+    public:
+        bool operator()(const pair<int,int>& lp,const pair<int,int>& rp)
+        {
+            return lp.second>rp.second;
+        }
+    };
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int,int> map;
+        for(auto num:nums)
+        {
+            map[num]++;
+        }
+        priority_queue<pair<int,int>,vector<pair<int,int>>,mycomparison> pq;
+        for(auto e:map)
+        {
+            pq.push(e);
+            if(pq.size()>k)
+            {
+                pq.pop();
+            }
+        }
+        vector<int> ans(k,0);
+        for(int i=(k-1);i>=0;i--)
+        {
+            ans[i]=(pq.top()).first;
+            pq.pop();
+        }
+        return ans;
+    }
+};
+```
+
+**要注意，sort时，左小于右的compare为从小到大，而在priority_queue中左大于右的compare为小顶堆。**
+
+* 用迭代的方式实现中序遍历
+
+**重点**：要理解遍历停止的条件，即当前遍历的节点为空且栈中为空
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> inorderTraversal(TreeNode* root) {
+        if(!root) 
+        {
+            vector<int> v;
+            return v;
+        }
+        vector<int> ans;
+        TreeNode* cur=root;
+        stack<TreeNode*> st;
+        st.push(cur);
+        cur=cur->left;
+        //栈为空且当前遍历的点为空，才停止中序遍历
+        while(cur||!st.empty())//这一步理解很关键，cur表示当前遍历到的点，栈是用于回溯遍历过的点。
+        {
+            if(cur)
+            {
+                st.push(cur);
+                cur=cur->left;
+            }
+            else
+            {
+                cur=st.top();
+                st.pop();
+                ans.push_back(cur->val);
+                cur=cur->right;
+            }
+        }
+        return ans;
+    }
+};
+```
+
+* 迭代法实现后序遍历
+
+**思路** ：参考前序遍历的方式，前序为中左右，后序为左右中，则先更改入栈的顺序，实现中右左的遍历顺序，再翻转结果数组。
+
+实现的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> postorderTraversal(TreeNode* root) {
+        if(!root)
+        {
+            vector<int> v;
+            return v;
+        }
+        vector<int> ans;
+        TreeNode* cur=root;
+        stack<TreeNode*> st;
+        st.push(cur);
+        while(!st.empty())
+        {
+            cur=st.top();
+            ans.push_back(cur->val);
+            st.pop();
+            if(cur->left)
+                st.push(cur->left);
+            if(cur->right)
+                st.push(cur->right);
+        }
+        reverse(ans.begin(),ans.end());
+        return ans;
+    }
+};
+```
+
+* 对称二叉树
+
+**思路** ：若要用的递归的方法，则运用类似后序遍历的方式，得到的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool traverse(TreeNode* left,TreeNode* right)
+    {
+        if((!left)&&(!right)) return true;
+        else if(left&&right)
+        {
+            if(left->val!=right->val) return false;
+        }
+        else if((!left)&&right) return false;
+        else if((!right)&&left) return false;
+        bool flag1 = traverse(left->left,right->right);
+        bool flag2=traverse(left->right,right->left);
+        return flag1&&flag2;
+    }
+    bool isSymmetric(TreeNode* root) {
+        if(!root) return true;
+        return traverse(root->left,root->right);
+    }
+};
+```
+
+* 完全二叉树的个数
+
+**思路**：比起一般求二叉树个数，完全二叉树的遍历求个数有下面两种情况：
+
+1. 如果根节点的左子树深度等于右子树深度，则说明 **左子树为满二叉树**
+2. 如果根节点的左子树深度大于右子树深度，则说明 **右子树为满二叉树**
+
+比起一般的求二叉树的个数的方法，时间复杂度为O(N)，该方法为O(logN*logN)
+
+可以得到代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        if(!root) return 0;
+        int leftdepth=0;
+        int rightdepth=0;
+        TreeNode* leftnode=root->left;
+        TreeNode* rightnode=root->right;
+        while(leftnode)
+        {
+            leftdepth++;
+            leftnode=leftnode->left;
+        }
+        while(rightnode)
+        {
+            rightdepth++;
+            rightnode=rightnode->left;
+        }
+        if(leftdepth==rightdepth)
+            return countNodes(root->right)+(1<<leftdepth);
+        else
+            return countNodes(root->left)+(1<<rightdepth);
+    }
+};
+```
+
+* 平衡二叉树
+
+给定一个二叉树，判断它是否是高度平衡的二叉树。
+
+本题中，一棵高度平衡二叉树定义为：
+
+> 一个二叉树*每个节点* 的左右两个子树的高度差的绝对值不超过 1 。
+
+**思路**： 参考求二叉树最大深度的递归方法，修改一处逻辑，若回溯到某处，已经高度绝对值之差比1大，此时返回-1，上面的回溯部分均返回-1。
+
+得到的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int getDepth(TreeNode* node)
+    {
+        if(!node) return 0;
+        int leftdepth=getDepth(node->left);
+        int rightdepth=getDepth(node->right);
+        if(leftdepth==-1||rightdepth==-1) return -1;
+        if(abs(leftdepth-rightdepth)>1) return -1;
+        return max(leftdepth,rightdepth)+1;
+    }
+    bool isBalanced(TreeNode* root) {
+        if(getDepth(root)==-1) return false;
+        return true;
+    }
+};
+```
+
+* 中序遍历和后序遍历构建二叉树
+
+**思路**：主要是递归函数怎么写，构造二叉树时，可以使用返回节点的方式进行递归构建。代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    //当要进行构建时，可以运用返回值的方式进行递归
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        if(inorder.size()==0) return NULL;
+        TreeNode* node = new TreeNode();
+        if(inorder.size()==1)
+        {
+            node->val=inorder[0];
+            return node;
+        }
+        node->val = postorder[postorder.size()-1];
+        int i;
+        for(i=0;i<inorder.size();i++)
+        {
+            if(inorder[i]==node->val)
+                break;
+        }
+        vector<int> leftinorder(inorder.begin(),inorder.begin()+i);
+        vector<int> rightinorder(inorder.begin()+i+1,inorder.end());
+        vector<int> leftpostoder(postorder.begin(),postorder.begin()+i);
+        vector<int> rightpostoder(postorder.begin()+i,postorder.end()-1);
+        node->left=buildTree(leftinorder,leftpostoder);
+        node->right=buildTree(rightinorder,rightpostoder);
+        return node;
+    }
+};
+```
+
