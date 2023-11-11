@@ -884,3 +884,213 @@ public:
 };
 ```
 
+* 二叉搜索树判断
+
+给你一个二叉树的根节点 `root` ，判断其是否是一个有效的二叉搜索树。
+
+**有效** 二叉搜索树定义如下：
+
+- 节点的左子树只包含 **小于** 当前节点的数。
+- 节点的右子树只包含 **大于** 当前节点的数。
+- 所有左子树和右子树自身必须也是二叉搜索树。
+
+**思路：**注意二叉搜索树的判断可以用中序遍历来判断，同时要注意不能只是单单比较左右孩子节点的值！！！
+
+代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    bool inordertraverse(TreeNode* cur)
+    {
+        if(!cur) return true;
+        if(!inordertraverse(cur->left)) return false;
+        if(v.size()==0) v.push_back(cur->val);
+        else
+        {
+            if(v[v.size()-1]>=cur->val) return false;
+            else v.push_back(cur->val);
+        }
+        if(!inordertraverse(cur->right)) return false;
+        return true;
+    }
+    bool isValidBST(TreeNode* root) {
+    v.clear();
+    return inordertraverse(root);
+    }
+private:
+    vector<int> v;
+};
+```
+
+* 二叉搜索树的最小绝对差
+
+给你一个二叉搜索树的根节点 `root` ，返回 **树中任意两不同节点值之间的最小差值** 。
+
+差值是一个正数，其数值等于两值之差的绝对值。
+
+**思路：**要搞清楚二叉搜索树的定义！！！不能简单地认为就这个最小值就存在于连续两层之间！！！
+
+代码实现如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void inordertraverse(TreeNode* cur)
+    {
+        if(!cur) return;
+        inordertraverse(cur->left);
+        if(pre==-1)
+        {
+            pre=cur->val;
+        }
+        else
+        {
+            judgeval=min(judgeval,cur->val-pre);
+            pre=cur->val;
+        }
+        inordertraverse(cur->right);
+    }
+    int getMinimumDifference(TreeNode* root) {
+        judgeval=1e5+10;
+        pre=-1;
+        inordertraverse(root);
+        return judgeval;
+    }
+private:
+    int judgeval;
+    int pre;
+};
+```
+
+* 二叉搜索树中的众数
+
+给你一个含重复值的二叉搜索树（BST）的根节点 `root` ，找出并返回 BST 中的所有 [众数](https://baike.baidu.com/item/众数/44796)（即，出现频率最高的元素）。
+
+如果树中有不止一个众数，可以按 **任意顺序** 返回。
+
+假定 BST 满足如下定义：
+
+- 结点左子树中所含节点的值 **小于等于** 当前节点的值
+- 结点右子树中所含节点的值 **大于等于** 当前节点的值
+- 左子树和右子树都是二叉搜索树
+
+**思路：**要想要不借助额外空间，还是采取中序遍历的方式，用pre记录前一个值，并进行比较。代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    void inordertraverse(TreeNode* cur)
+    {
+        if(!cur) return;
+        inordertraverse(cur->left);
+        if(pre==nullptr)
+        {
+            pre=cur;
+            count=1;
+        }
+        else
+        {
+            if(pre->val==cur->val)
+            {
+                count++;
+            }
+            else
+                count=1;
+            pre=cur;
+        }
+        if(count>maxcount)
+        {
+            maxcount=count;
+            res.clear();
+            res.push_back(cur->val);
+        }
+        else if(count==maxcount)
+        {
+            res.push_back(cur->val);
+        }
+        inordertraverse(cur->right);
+    }
+    vector<int> findMode(TreeNode* root) {
+        res.clear();
+        pre=nullptr;
+        count=maxcount=0;
+        inordertraverse(root);
+        return res;
+    }
+private:
+    vector<int> res;
+    TreeNode* pre;
+    int count;
+    int maxcount;
+};
+```
+
+* 二叉树的最近公共祖先
+
+给定一个二叉树, 找到该树中两个指定节点的最近公共祖先。
+
+[百度百科](https://baike.baidu.com/item/最近公共祖先/8918834?fr=aladdin)中最近公共祖先的定义为：“对于有根树 T 的两个节点 p、q，最近公共祖先表示为一个节点 x，满足 x 是 p、q 的祖先且 x 的深度尽可能大（**一个节点也可以是它自己的祖先**）。”
+
+**思路：**按照前序的方式进行遍历（选用前序的原因是这种遍历顺序是自上向下的），而回溯的顺序自底向上（也就是说，遍历到底后，向上回溯），回溯的过程中返回最近公共祖先，nullptr，p或者q（运用类似并查集的思想）。
+
+实现的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root==nullptr||root==p||root==q) return root;
+        TreeNode* lt = lowestCommonAncestor(root->left,p,q);
+        TreeNode* rt = lowestCommonAncestor(root->right,p,q);
+        //if(root==p||root==q) return root;
+        if(lt==nullptr&&rt==nullptr) return nullptr;
+        else if(lt&&rt) return root;
+        else if(lt) return lt;
+        else return rt;
+    }
+};
+```
+
