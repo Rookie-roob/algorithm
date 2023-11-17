@@ -1094,3 +1094,629 @@ public:
 };
 ```
 
+* 二叉搜索树的最近公共祖先
+
+给定一个二叉搜索树, 找到该树中两个指定节点的最近公共祖先。
+
+[百度百科](https://baike.baidu.com/item/最近公共祖先/8918834?fr=aladdin)中最近公共祖先的定义为：“对于有根树 T 的两个结点 p、q，最近公共祖先表示为一个结点 x，满足 x 是 p、q 的祖先且 x 的深度尽可能大（**一个节点也可以是它自己的祖先**）。”
+
+例如，给定如下二叉搜索树: root = [6,2,8,0,4,7,9,null,null,3,5]
+
+**思路：**结合二叉搜索树的性质，自上向下遍历到一个值在p和q对应的值之间或者和其中一个值相等时，立刻停止递归。
+
+代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+ * };
+ */
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root==nullptr) return root;
+        if(root->val>p->val&&root->val>q->val)
+        {
+            return lowestCommonAncestor(root->left,p,q);
+        }
+        else if(root->val<p->val&&root->val<q->val)
+        {
+            return lowestCommonAncestor(root->right,p,q);
+        }
+        return root;
+    }
+};
+```
+
+* 删除二叉搜索树中的节点
+
+给定一个二叉搜索树的根节点 **root** 和一个值 **key**，删除二叉搜索树中的 **key** 对应的节点，并保证二叉搜索树的性质不变。返回二叉搜索树（有可能被更新）的根节点的引用。
+
+一般来说，删除节点可分为两个步骤：
+
+1. 首先找到需要删除的节点；
+2. 如果找到了，删除它。
+
+**思路：**类似插入节点时的递归方式，以返回节点的方式进行递归，由于二叉搜索树的性质，只需要递归一边，当遍历到目标节点时，进行分情况讨论：
+
+1. 叶子节点，返回nullptr
+2. 左右一边为空，返回另一边即可
+3. 左右孩子均非空，将左子树，移到右孩子的最左边。
+
+代码实现如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if(root==nullptr) return root;
+        if(root->val==key)
+        {
+            if(root->left==nullptr&&root->right==nullptr)
+            {
+                delete root;
+                return nullptr;
+            }
+            else if(root->left==nullptr)
+            {
+                TreeNode* tmp = root->right;
+                delete root;
+                return tmp;
+            }
+            else if(root->right==nullptr)
+            {
+                TreeNode* tmp = root->left;
+                delete root;
+                return tmp;
+            }
+            else
+            {
+                TreeNode* leftchild = root->left;
+                TreeNode* rightchild = root->right;
+                while(rightchild->left)
+                {
+                    rightchild=rightchild->left;
+                }
+                rightchild->left=leftchild;
+                rightchild = root->right;
+                delete root;
+                return rightchild;
+            }
+        }
+        else if(root->val>key)
+        {
+            root->left=deleteNode(root->left,key);
+        }
+        else
+        {
+            root->right=deleteNode(root->right,key);
+        }
+        return root;
+    }
+};
+```
+
+* 修剪二叉搜索树
+
+给你二叉搜索树的根节点 `root` ，同时给定最小边界`low` 和最大边界 `high`。通过修剪二叉搜索树，使得所有节点的值在`[low, high]`中。修剪树 **不应该** 改变保留在树中的元素的相对结构 (即，如果没有被移除，原有的父代子代关系都应当保留)。 可以证明，存在 **唯一的答案** 。
+
+所以结果应当返回修剪好的二叉搜索树的新的根节点。注意，根节点可能会根据给定的边界发生改变。
+
+**思路：**类似插入和删除二叉搜索树的节点，利用返回节点的方式进行递归回溯，若当前节点小于low，则不断用其右孩子进行代替，以此类推，除非遍历到了空节点；当前节点大于high的情况与上面类似。最终得到的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    TreeNode* trimBST(TreeNode* root, int low, int high) {
+        if(!root) return root;
+        if(root->val<low)
+        {
+            return trimBST(root->right,low,high);
+        }
+        if(root->val>high)
+        {
+            return trimBST(root->left,low,high);
+        }
+        root->left = trimBST(root->left,low,high);
+        root->right = trimBST(root->right,low,high);
+        return root;
+    }
+};
+```
+
+* 电话号码的字母组合
+
+  给定一个仅包含数字 `2-9` 的字符串，返回所有它能表示的字母组合。答案可以按 **任意顺序** 返回。
+
+  给出数字到字母的映射如下（与电话按键相同）。注意 1 不对应任何字母。
+
+  ![img](picture/phone_number.png)
+
+**思路：**这题主要的点在于，每个数字对应的字符串是必须要选的，是不可以跳过去的，在遍历的时候一定要注意！！！
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    void backtrace(string& s,string digits,int index)
+    {
+        if(index==digits.length())
+        {
+            ans.push_back(s);
+            return;
+        }
+        int i=index;
+        for(int j=0;j<(nummap[digits[i]-'0']).size();j++)
+        {
+            s = s+nummap[digits[i]-'0'][j];
+            backtrace(s,digits,i+1);
+            s.resize(s.length()-1);
+        }
+    }
+    vector<string> letterCombinations(string digits) {
+        ans.clear();
+        if(digits.size()==0) return ans;
+        nummap[2] = vector<string>{"a","b","c"};
+        nummap[3] = vector<string>{"d","e","f"};
+        nummap[4] = vector<string>{"g","h","i"};
+        nummap[5] = vector<string>{"j","k","l"};
+        nummap[6] = vector<string>{"m","n","o"};
+        nummap[7] = vector<string>{"p","q","r","s"};
+        nummap[8] = vector<string>{"t","u","v"};
+        nummap[9] = vector<string>{"w","x","y","z"};
+        string s;
+        backtrace(s,digits,0);
+        return ans;
+    }
+private:
+    unordered_map<int,vector<string>> nummap;
+    vector<string> ans;
+};
+```
+
+* 复原IP地址
+
+**有效 IP 地址** 正好由四个整数（每个整数位于 `0` 到 `255` 之间组成，且不能含有前导 `0`），整数之间用 `'.'` 分隔。
+
+- 例如：`"0.1.2.201"` 和` "192.168.1.1"` 是 **有效** IP 地址，但是 `"0.011.255.245"`、`"192.168.1.312"` 和 `"192.168@1.1"` 是 **无效** IP 地址。
+
+给定一个只包含数字的字符串 `s` ，用以表示一个 IP 地址，返回所有可能的**有效 IP 地址**，这些地址可以通过在 `s` 中插入 `'.'` 来形成。你 **不能** 重新排序或删除 `s` 中的任何数字。你可以按 **任何** 顺序返回答案。
+
+**思路：**这里一开始没有搞清楚的点是，遇到了前缀0，直接加入一个0，但是要注意的是，加入后要进行回溯！！！这一步不能忘记，否则就会造成其他地方回溯弹出了这个0，那么就会发生错误！！！
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int tonum(string& s)
+    {
+        int num=0;
+        for(int i=0;i<s.length();i++)
+            num=(num*10+s[i]-'0');
+        return num;
+    }
+    void backtrace(string& s,vector<string>& v,int index)
+    {
+        if(index==s.length()&&v.size()==4)
+        {
+            ans.push_back(v);
+            return;
+        }
+        else if(index==s.length()||v.size()==4)
+            return;
+        else
+        {
+            if(s[index]=='0')
+            {
+                v.push_back("0");
+                backtrace(s,v,index+1);
+                v.pop_back();
+            }
+            else
+            {
+                for(int i=index;(i<s.length())&&((i-index)<3);i++)
+                {
+                    string subs = s.substr(index,i-index+1);
+                    int num = tonum(subs);
+                    if(num>=0&&num<=255)
+                    {
+                        v.push_back(subs);
+                        backtrace(s,v,i+1);
+                        v.pop_back();
+                    }
+                }
+            }
+        }
+    }
+    vector<string> restoreIpAddresses(string s) {
+        vector<string> v1;
+        if(s.length()<4||s.length()>12) return v1;
+        ans.clear();
+        vector<string> v;
+        backtrace(s,v,0);
+        
+        for(int i=0;i<ans.size();i++)
+        {
+            string s1=ans[i][0];
+            for(int j=1;j<4;j++)
+            {
+                s1+=".";
+                s1+=ans[i][j];
+            }
+            v1.push_back(s1);
+        }
+        return v1;
+    }
+private:
+    vector<vector<string>> ans;
+};
+```
+
+* 含重复数字的重排列
+
+给定一个可包含重复数字的序列 `nums` ，***按任意顺序*** 返回所有不重复的全排列。
+
+**思路：**活用used数组进行遍历回溯，但是要注意先进行排序！
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    void backtrace(vector<int>& v,vector<int>& nums,vector<bool>& used)
+    {
+        if(v.size()==nums.size())
+        {
+            ans.push_back(v);
+            return;
+        }
+        for(int i=0;i<nums.size();i++)
+        {
+            if(i>0&&nums[i]==nums[i-1]&&used[i-1]==false)
+                continue;
+            if(used[i]==false)
+            {
+                used[i]=true;
+                v.push_back(nums[i]);
+                backtrace(v,nums,used);
+                v.pop_back();
+                used[i]=false;
+            }
+        }
+    }
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        ans.clear();
+        vector<int> v;
+        vector<bool> used(nums.size(),false);
+        sort(nums.begin(),nums.end());
+        backtrace(v,nums,used);
+        return ans;
+    }
+private:
+    vector<vector<int>> ans;
+};
+```
+
+实现方式还有下面的方式，但是较为麻烦，memset其实也要耗费时间！！！
+
+代码如下：
+
+```c++
+int a[21];
+class Solution {
+public:
+    void backtrace(vector<int>& v,vector<int>& nums)
+    {
+        if(v.size()==nums.size())
+        {
+            ans.push_back(v);
+            return;
+        }
+        bool judge[21];
+        memset(judge,false,sizeof(judge));
+        for(int i=0;i<nums.size();i++)
+        {
+            if(a[nums[i]+10]&&judge[nums[i]+10]==false)
+            {
+                judge[nums[i]+10]=true;
+                a[nums[i]+10]--;
+                v.push_back(nums[i]);
+                backtrace(v,nums);
+                v.pop_back();
+                a[nums[i]+10]++;
+            }
+        }
+    }
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        ans.clear();
+        vector<int> v;
+        memset(a,0,sizeof(a));
+        for(int i=0;i<nums.size();i++)
+            a[nums[i]+10]++;
+        backtrace(v,nums);
+        return ans;
+    }
+private:
+    vector<vector<int>> ans;
+};
+```
+
+还是觉得第一种方法更好！！！
+
+* 重新安排行程
+
+给你一份航线列表 `tickets` ，其中 `tickets[i] = [fromi, toi]` 表示飞机出发和降落的机场地点。请你对该行程进行重新规划排序。
+
+所有这些机票都属于一个从 `JFK`（肯尼迪国际机场）出发的先生，所以该行程必须从 `JFK` 开始。如果存在多种有效的行程，请你按字典排序返回最小的行程组合。
+
+- 例如，行程 `["JFK", "LGA"]` 与 `["JFK", "LGB"]` 相比就更小，排序更靠前。
+
+假定所有机票至少存在一种合理的行程。且所有的机票 必须都用一次 且 只能用一次。
+
+**思路：**要注意，这个题相同的机票可能会有多张！！！且可能会在遍历过程中到一个死胡同，此时是需要回溯的！！！！而且可能会有A->B，B->A这样的循环路径存在，因此需要一个很好的数据结构进行记录，选用unordered_map<string,map<string,int>>，因为遍历过程中，是需要删除操作的，不然遍历无法向下进行，而单单地选用unordered_map<string,multi_set<string>>，在遍历set时，是无法删除值的，不然迭代器会无效！！！
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    bool backtrace(string source,vector<string>& v)
+    {
+        if(v.size()==total_count)
+        {
+            ans=v;
+            return true;
+        }
+        for(auto iter=(mp[source]).begin();iter!=(mp[source]).end();iter++)
+        {
+            if((*iter).second==0)
+                continue;
+            else
+            {
+                v.push_back((*iter).first);
+                (*iter).second--;
+                if(backtrace((*iter).first,v))
+                {
+                    return true;
+                }
+                v.pop_back();
+                (*iter).second++;
+            }
+        }
+        return false;
+    }
+    vector<string> findItinerary(vector<vector<string>>& tickets) {
+        mp.clear();
+        ans.clear();
+        total_count=1;
+        for(int i=0;i<tickets.size();i++)
+        {
+            mp[tickets[i][0]][tickets[i][1]]++;
+            total_count++;
+        }
+        vector<string> v;
+        v.push_back("JFK");
+        backtrace("JFK",v);
+        return ans;
+    }
+private:
+    unordered_map<string,map<string,int>> mp;
+    vector<string> ans;
+    int total_count;
+};
+```
+
+* 摆动序列
+
+如果连续数字之间的差严格地在正数和负数之间交替，则数字序列称为 **摆动序列 。**第一个差（如果存在的话）可能是正数或负数。仅有一个元素或者含两个不等元素的序列也视作摆动序列。
+
+- 例如， `[1, 7, 4, 9, 2, 5]` 是一个 **摆动序列** ，因为差值 `(6, -3, 5, -7, 3)` 是正负交替出现的。
+- 相反，`[1, 4, 7, 2, 5]` 和 `[1, 7, 4, 5, 5]` 不是摆动序列，第一个序列是因为它的前两个差值都是正数，第二个序列是因为它的最后一个差值为零。
+
+**子序列** 可以通过从原始序列中删除一些（也可以不删除）元素来获得，剩下的元素保持其原始顺序。
+
+给你一个整数数组 `nums` ，返回 `nums` 中作为 **摆动序列** 的 **最长子序列的长度** 。
+
+**思路：**当(preDiff <= 0 && curDiff > 0) || (preDiff >= 0 && curDiff < 0)时，说明到了一个波峰或者波谷，这里我们在处理的过程中，遇到了平地时，会取最右边的情况。我们假定最右边固定有一个波峰或者波谷，还要注意“上-平-上”这样的情况下只能记录一个波峰！！！
+
+```c++
+class Solution {
+public:
+    int wiggleMaxLength(vector<int>& nums) {
+        int prediff = 0;
+        int curdiff;
+        int cnt=1;
+        for(int i=0;i<(nums.size()-1);i++)
+        {
+            curdiff=nums[i+1]-nums[i];
+            if((prediff<=0&&curdiff>0)||(prediff>=0&&curdiff<0))
+            {
+                cnt++;
+                prediff=curdiff;//这一步要在确定要转换波峰波谷的时候进行代换！！！
+            }
+        }
+        return cnt;
+    }
+};
+```
+
+* 跳跃游戏
+
+给你一个非负整数数组 `nums` ，你最初位于数组的 **第一个下标** 。数组中的每个元素代表你在该位置可以跳跃的最大长度。
+
+判断你是否能够到达最后一个下标，如果可以，返回 `true` ；否则，返回 `false` 。
+
+ **思路：**注意本题只是要求得出可不可行，所以可以按照cover覆盖范围来求解，如果覆盖范围变大至数组边界，则有解，若遍历到了cover边界，该cover还是没有动，那么无解。当然也可以用现在覆盖，下一个覆盖的方式来求解（下一个题目）
+
+代码如下：
+
+A.
+
+```c++
+class Solution {
+public:
+    //这道题只要求得到能不能求出解
+    bool canJump(vector<int>& nums) {
+        if(nums.size()==1) return true;
+        int cover=0;
+        for(int i=0;i<=cover;i++)
+        {
+            if((nums[i]+i)>cover)
+            {
+                cover=nums[i]+i;
+                if(cover>=(nums.size()-1)) return true;
+            }
+        }
+        return false;
+    }
+};
+```
+
+
+
+B.
+
+```c++
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int point=0;
+        int area = nums[0];
+        while(!(((point+area)>=(nums.size()-1))||(area==0)))
+        {
+            //cout<<point<<" "<<area<<endl;
+            int tmp=0;
+            int p=point;
+            for(int i=point;i<=(area+point)&&i<nums.size();i++)
+            {
+                if((i+nums[i])>tmp)
+                {
+                    tmp=(i+nums[i]);
+                    p=i;
+                }
+                //cout<<"next"<<" "<<i<<" "<<nums[i]<<endl;
+            }
+            //cout<<"last"<<" "<<p<<" "<<nums[p]<<endl;
+            if(tmp==(point+area)&&tmp<(nums.size()-1))
+                return false;
+            point=p;
+            area=nums[point];
+            //cout<<"next loop "<<point<<" "<<area<<endl;
+        }
+        if((point+area)>=(nums.size()-1))
+            return true;
+        else
+            return false;
+    }
+};
+```
+
+* 跳跃游戏2
+
+给定一个长度为 `n` 的 **0 索引**整数数组 `nums`。初始位置为 `nums[0]`。
+
+每个元素 `nums[i]` 表示从索引 `i` 向前跳转的最大长度。换句话说，如果你在 `nums[i]` 处，你可以跳转到任意 `nums[i + j]` 处:
+
+- `0 <= j <= nums[i]` 
+- `i + j < n`
+
+返回到达 `nums[n - 1]` 的最小跳跃次数。生成的测试用例可以到达 `nums[n - 1]`。
+
+**思路：**用当前覆盖以及下一次覆盖进行求解，要注意代码写的简洁性。
+
+代码如下：
+
+A.
+
+```c++
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        if(nums.size()==1) return 0;
+        int curdist = 0;
+        int nextdist = 0;
+        int cnt = 0;
+        for(int i=0;i<(nums.size()-1);i++)
+        {
+            nextdist=max(nextdist,i+nums[i]);
+            if(i==curdist)
+            {
+                cnt++;
+                curdist=nextdist;
+            }
+        }
+        return cnt;
+    }
+};
+```
+
+B.
+
+```c++
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        if(nums.size()==1) return 0;
+        int point=0;
+        int area = nums[0];
+        int cnt=1;
+        while(!(((point+area)>=(nums.size()-1))||(area==0)))
+        {
+            //cout<<point<<" "<<area<<endl;
+            cnt++;
+            int tmp=0;
+            int p=point;
+            for(int i=point;i<=(area+point)&&i<nums.size();i++)
+            {
+                if((i+nums[i])>tmp)
+                {
+                    tmp=(i+nums[i]);
+                    p=i;
+                }
+                //cout<<"next"<<" "<<i<<" "<<nums[i]<<endl;
+            }
+            //cout<<"last"<<" "<<p<<" "<<nums[p]<<endl;
+            if(tmp==(point+area)&&tmp<(nums.size()-1))
+                return -1;
+            point=p;
+            area=nums[point];
+            //cout<<"next loop "<<point<<" "<<area<<endl;
+        }
+        if((point+area)>=(nums.size()-1))
+            return cnt;
+        else
+            return -1;
+    }
+};
+```
+
