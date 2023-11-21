@@ -1720,3 +1720,535 @@ public:
 };
 ```
 
+* K次取反后最大化的数组和
+
+给你一个整数数组 `nums` 和一个整数 `k` ，按以下方法修改该数组：
+
+- 选择某个下标 `i` 并将 `nums[i]` 替换为 `-nums[i]` 。
+
+重复这个过程恰好 `k` 次。可以多次选择同一个下标 `i` 。
+
+以这种方式修改数组后，返回数组 **可能的最大和** 。
+
+**思路：**这里其实要注意按照下面的写法，当把负的转换成正的后，此时可能k可能还有剩余，根据k的奇偶判断是否要转换当前的元素。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int largestSumAfterKNegations(vector<int>& nums, int k) {
+        sort(nums.begin(),nums.end());
+        int index=0;
+        while(k--)
+        {
+            if(nums[index]<0)
+            {
+                nums[index]=-nums[index];
+                index++;
+                if(index==nums.size())//这一步不能忘记，此时是会到达数组结尾的
+                {
+                    if(k%2==0) break;
+                    else
+                    {
+                        nums[index-1]=-nums[index-1];
+                        break;
+                    }
+                }
+            }
+            else if(nums[index]==0)
+            {
+                break;
+            }
+            else
+            {
+                if(k%2==1) break;
+                else
+                {
+                    if(index==0) nums[index]=-nums[index];
+                    else if(index>0&&nums[index]>nums[index-1]) nums[index-1]=-nums[index-1];
+                    else nums[index]=-nums[index];
+                    break;
+                }
+            }
+        }
+        int tmpsum=0;
+        for(auto v:nums)
+            tmpsum+=v;
+        return tmpsum;
+    }
+};
+```
+
+思路更简洁的方式如下：（先将数组按照绝对值从大到小排序，而后从前到后遍历，碰到负数且k>0，此时取反。而后如果k还有剩余，则对于绝对值最小的进行后续判断）
+
+```c++
+class Solution {
+public:
+    static bool cmp(const int& a,const int& b)
+    {
+        return abs(a)>abs(b);
+    }
+    int largestSumAfterKNegations(vector<int>& nums, int k) {
+        sort(nums.begin(),nums.end(),cmp);
+        for(int i=0;i<nums.size();i++)
+        {
+            if(k>0&&nums[i]<0)
+            {
+                nums[i]=-nums[i];
+                k--;
+            }
+        }
+        if(k>0)
+        {
+            if(k%2==1)
+                nums[nums.size()-1]=-nums[nums.size()-1];
+        }
+        int tmp=0;
+        for(auto v:nums)
+            tmp+=v;
+        return tmp;
+    }
+};
+```
+
+* 加油站（重点思考题目！！！）
+
+在一条环路上有 `n` 个加油站，其中第 `i` 个加油站有汽油 `gas[i]` 升。
+
+你有一辆油箱容量无限的的汽车，从第 `i` 个加油站开往第 `i+1` 个加油站需要消耗汽油 `cost[i]` 升。你从其中的一个加油站出发，开始时油箱为空。
+
+给定两个整数数组 `gas` 和 `cost` ，如果你可以按顺序绕环路行驶一周，则返回出发时加油站的编号，否则返回 `-1` 。如果存在解，则 **保证** 它是 **唯一** 的。
+
+**思路：**从i到j如果开不到，则只能从j+1开始考虑。这个题主要难论证的点是：怎么证明解是有效的，最后的想法是用类似反证法的方式，最后得到一个点k，k到末尾的cursum是大于0的，如果开头有段距离cursum小于0，此时后半段肯定要有相应的补回来，因为总的totalsum是大于0的，以此类推，如果中间又有一段是小于0，那么后面还要继续补回来。。。直到最后到达最终的点。
+
+代码如下（整体的代码在这个思路下还是很好写的，主要是这个思路！！！）：
+
+```c++
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int totalsum =  0;
+        int cursum = 0;
+        int index=0;
+        for(int i=0;i<gas.size();i++)
+        {
+            totalsum+=gas[i]-cost[i];
+            cursum+=gas[i]-cost[i];
+            if(cursum<0)
+            {
+                cursum=0;
+                index=(i+1);
+            }
+        }
+        if(totalsum<0) return -1;
+        return index;
+    }
+};
+```
+
+* 分发糖果
+
+`n` 个孩子站成一排。给你一个整数数组 `ratings` 表示每个孩子的评分。
+
+你需要按照以下要求，给这些孩子分发糖果：
+
+- 每个孩子至少分配到 `1` 个糖果。
+- 相邻两个孩子评分更高的孩子会获得更多的糖果。
+
+请你给每个孩子分发糖果，计算并返回需要准备的 **最少糖果数目** 。
+
+**思路：**这题可以想到既要从前向后看，也要从后往前看。主要是在做的时候，注意想到先将分发的糖果都初始化为1，可以做两次做遍历，做两次贪心，第二次的时候取**最大值**。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        vector<int> v(ratings.size(),1);
+        
+        for(int i=1;i<ratings.size();i++)
+        {
+            if(ratings[i]>ratings[i-1])
+                v[i]=v[i-1]+1;
+        }
+
+        for(int i=(ratings.size()-2);i>=0;i--)
+        {
+            if(ratings[i]>ratings[i+1])
+            {
+                v[i]=max(v[i],v[i+1]+1);
+            }
+        }
+        int sum=0;
+        for(auto s:v)
+            sum+=s;
+        return sum;
+    }
+};
+```
+
+* 根据身高重建队列
+
+假设有打乱顺序的一群人站成一个队列，数组 `people` 表示队列中一些人的属性（不一定按顺序）。每个 `people[i] = [hi, ki]` 表示第 `i` 个人的身高为 `hi` ，前面 **正好** 有 `ki` 个身高大于或等于 `hi` 的人。
+
+请你重新构造并返回输入数组 `people` 所表示的队列。返回的队列应该格式化为数组 `queue` ，其中 `queue[j] = [hj, kj]` 是队列中第 `j` 个人的属性（`queue[0]` 是排在队列前面的人）。
+
+**思路：**把这个队伍重建的过程想象成把人一个个插入队列的过程。按照身高从高到低，若身高相等则按照ki从小到大进行排序，按照这个顺序进行插入，可以保证这个插入过程是正确的，因为身高低的后插入，而比他大的之前就在队列里了，身高相等的，也是按照顺序进行插入（因为ki表示前面有ki个大于或等于 `hi`的人，所以身高相等则按照ki从小到大进行排序）。
+
+这里要注意写代码时，要用到vector的insert，做到动态插入；同时，在写排序的cmp函数时，不能简单地写a>b||c\<d这种形式，因为这样的话并不能表示相等时判断c，d，不相等时判断a，b，要写成a==b?c\<d:a\>b，写代码时要仔细！！！！
+
+```c++
+class Solution {
+public:
+    static bool cmp(const vector<int>& v1,const vector<int>& v2)
+    {
+        return v1[0]==v2[0]?v1[1]<v2[1]:v1[0]>v2[0];
+    }
+    vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
+        sort(people.begin(),people.end(),cmp);
+        vector<vector<int>> ans;
+        for(int i=0;i<people.size();i++)
+        {
+            int pos = people[i][1];
+            ans.insert(ans.begin()+pos,people[i]);
+        }
+        return ans;
+    }
+};
+```
+
+* 单调递增的数字
+
+当且仅当每个相邻位数上的数字 `x` 和 `y` 满足 `x <= y` 时，我们称这个整数是**单调递增**的。
+
+给定一个整数 `n` ，返回 *小于或等于 `n` 的最大数字，且数字呈 **单调递增*** 。
+
+ 
+
+**示例 1:**
+
+```
+输入: n = 10
+输出: 9
+```
+
+**示例 2:**
+
+```
+输入: n = 1234
+输出: 1234
+```
+
+**示例 3:**
+
+```
+输入: n = 332
+输出: 299
+```
+
+ 
+
+**提示:**
+
+- `0 <= n <= 109`
+
+**思路：**暴力法很容易超时。可以从前向后或者从后向前逐位遍历，这里采用从后向前比较好，因为从前向后遍历的话，遇到逆序的时候，还要回去遍历。主要思想就是遇到逆序的，如12222222221，遇到逆序的21，则考虑后面的位数到替换为9，主要就是要找到从哪一位开始替换为9，这里的话要找到逆序数对的前一个，对于该数向前最多能到哪一位（在这个区间中的数都相等，都为这个逆序数对的前一个），把那个最前的减1即可，对于这个例子，到了1后面的那一位，2-1=1，后面全为9，则最后答案为11999999999。
+
+代码如下：
+
+**从前向后：**
+
+```c++
+class Solution {
+public:
+    int monotoneIncreasingDigits(int n) {
+        if(n<10) return n;
+        vector<int> v;
+        int ncopy=n;
+        while(n)
+        {
+            v.push_back(n%10);
+            n=n/10;
+        }
+        vector<int> ans;
+        bool flag=false;
+        for(int i=(v.size()-2);i>=0;i--)
+        {
+            if(v[i]>=v[i+1])
+            {
+                ans.push_back(v[i+1]);
+            }
+            else
+            {
+                flag=true;
+                if(((i+2)<v.size())&&v[i+1]==v[i+2])
+                {
+                    int index = -1;
+                    for(int j=(ans.size()-1);j>=0;j--)
+                    {
+                        if(ans[j]!=v[i+1])
+                        {
+                            index=j;
+                            break;
+                        }
+                    }
+                    //index+1到ans.size()-1值相等
+                    ans[index+1]--;
+                    for(int j=index+2;j<ans.size();j++)
+                        ans[j]=9;
+                    for(int j=(i+1);j>=0;j--)
+                    {
+                        ans.push_back(9);
+                    }
+                }
+                else
+                {
+                    ans.push_back(v[i+1]-1);
+                    for(int j=i;j>=0;j--)
+                    {
+                        ans.push_back(9);
+                    }
+                }
+                break;
+            }
+        }
+        if(!flag) return ncopy;
+        else
+        {
+            int num=0;
+            for(auto item:ans)
+                num=num*10+item;
+            return num;
+        }
+    }
+};
+```
+
+
+
+**从后向前：**
+
+```c++
+class Solution {
+public:
+    int monotoneIncreasingDigits(int n) {
+        //从后向前遍历会更加直观简便，从前向后遍历还要往回看，很麻烦
+        string s = to_string(n);//转换成string，这一步很巧妙
+        int flag=-1;
+        for(int i=s.length()-1;i>0;i--)
+        {
+            if(s[i]<s[i-1])
+            {
+                s[i-1]--;
+                flag=i-1;
+            }
+        }
+        if(flag==-1) return n;
+        else
+        {
+            for(int i=flag+1;i<s.length();i++)
+            {
+                s[i]='9';
+            }
+            return stoi(s);
+        }
+    }
+};
+```
+
+* 划分字母区间
+
+给你一个字符串 `s` 。我们要把这个字符串划分为尽可能多的片段，同一字母最多出现在一个片段中。
+
+注意，划分结果需要满足：将所有划分结果按顺序连接，得到的字符串仍然是 `s` 。
+
+返回一个表示每个字符串片段的长度的列表。
+
+**思路：**该题可以采用最多互不相交的集合来解决，集合之间互不相交。当然更巧妙的是通过记录每个字母最多能到哪一位，然后，从前向后遍历，如果这个区间中每个字母的最远出现范围都被包在这个遍历的区间中，则找到了一个字母区间。
+
+代码如下：
+
+**最多互不相交的集合：**
+
+```c++
+class Solution {
+public:
+    static bool cmp(vector<int>& x,vector<int>& y)
+    {
+        return x[0]<y[0];
+    }
+    vector<int> partitionLabels(string s) {
+        memset(a,-1,sizeof(a));
+        for(int i=0;i<s.length();i++)
+        {
+            if(a[s[i]-'a'][0]==-1)
+            {
+                a[s[i]-'a'][0]=i;
+                a[s[i]-'a'][1]=i;
+            }
+            else
+            {
+                a[s[i]-'a'][1]=i;
+            }
+        }
+        vector<vector<int>> v;
+        for(int i=0;i<26;i++)
+        {
+            if(a[i][0]!=-1)
+            {
+                v.push_back({a[i][0],a[i][1]});
+            }
+        }
+        sort(v.begin(),v.end(),cmp);
+        vector<int> ans;
+        int rmax;
+        int lmin;
+        for(int i=0;i<v.size();i++)
+        {
+            if(i==0)
+            {
+                rmax=v[i][1];
+                lmin=v[i][0];
+            }
+            else
+            {
+                if(v[i][0]>rmax)
+                {
+                    ans.push_back(rmax-lmin+1);
+                    lmin=v[i][0];
+                    rmax=v[i][1];
+                }
+                else
+                {
+                    rmax=max(v[i][1],rmax);
+                }
+            }
+        }
+        ans.push_back(rmax-lmin+1);
+        return ans;
+
+
+    }
+private:
+    int a[26][2];
+};
+```
+
+**巧妙的思路：**
+
+```c++
+class Solution {
+public:
+    static bool cmp(vector<int>& x,vector<int>& y)
+    {
+        return x[0]<y[0];
+    }
+    vector<int> partitionLabels(string s) {
+        memset(a,-1,sizeof(a));
+        for(int i=0;i<s.length();i++)
+        {
+            if(a[s[i]-'a'][0]==-1)
+            {
+                a[s[i]-'a'][0]=i;
+                a[s[i]-'a'][1]=i;
+            }
+            else
+            {
+                a[s[i]-'a'][1]=i;
+            }
+        }
+        vector<vector<int>> v;
+        for(int i=0;i<26;i++)
+        {
+            if(a[i][0]!=-1)
+            {
+                v.push_back({a[i][0],a[i][1]});
+            }
+        }
+        sort(v.begin(),v.end(),cmp);
+        vector<int> ans;
+        int rmax;
+        int lmin;
+        for(int i=0;i<v.size();i++)
+        {
+            if(i==0)
+            {
+                rmax=v[i][1];
+                lmin=v[i][0];
+            }
+            else
+            {
+                if(v[i][0]>rmax)
+                {
+                    ans.push_back(rmax-lmin+1);
+                    lmin=v[i][0];
+                    rmax=v[i][1];
+                }
+                else
+                {
+                    rmax=max(v[i][1],rmax);
+                }
+            }
+        }
+        ans.push_back(rmax-lmin+1);
+        return ans;
+
+
+    }
+private:
+    int a[26][2];
+};
+```
+
+* 监控二叉树
+
+给定一个二叉树，我们在树的节点上安装摄像头。
+
+节点上的每个摄影头都可以监视**其父对象、自身及其直接子对象。**
+
+计算监控树的所有节点所需的最小摄像头数量。
+
+**思路：**为了避免叶子节点放摄像头，这会造成指数级别的增加，故我们遍历时要从类似自底向上的方式进行遍历，所以采用后序遍历。为了确定该节点需不需要放摄像头，采用状态转换的方式来判断，根据左右节点的状态，判断该节点需不需要放摄像头。状态可分为3类，即放摄像头，能够被覆盖，不能被覆盖。其中当状态为放摄像头时，统计的数目进行增加。
+
+代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    //0：无覆盖    1：放摄像头   2：有覆盖
+    int traverse(TreeNode* node)
+    {
+        if(!node) return 2;
+        int lst = traverse(node->left);
+        int rst = traverse(node->right);
+        if(lst==0||rst==0) 
+        {
+            totalnum++;
+            return 1;
+        }
+        else if(lst==1||rst==1) return 2;
+        else return 0;
+    }
+    int minCameraCover(TreeNode* root) {
+        totalnum=0;
+        if(traverse(root)==0) totalnum++;
+        return totalnum;
+    }
+private:
+    int totalnum;
+};
+```
+
