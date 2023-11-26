@@ -2252,3 +2252,241 @@ private:
 };
 ```
 
+* 目标和
+
+给你一个非负整数数组 `nums` 和一个整数 `target` 。
+
+向数组中的每个整数前添加 `'+'` 或 `'-'` ，然后串联起所有整数，可以构造一个 **表达式** ：
+
+- 例如，`nums = [2, 1]` ，可以在 `2` 之前添加 `'+'` ，在 `1` 之前添加 `'-'` ，然后串联起来得到表达式 `"+2-1"` 。
+
+返回可以通过上述方法构造的、运算结果等于 `target` 的不同 **表达式** 的数目。
+
+**思路：**把这个问题转换成背包问题，直接做的话，空间复杂度很高！！！
+
+```c+++
+class Solution {
+public:
+    //x-(S-x)=2x-S=t
+    //x=(S+t)/2
+    int findTargetSumWays(vector<int>& nums, int target) {
+        int sum=0;
+        for(auto num:nums)
+            sum+=num;
+        if(target>sum) return 0;
+        sum+=target;
+        if(sum<0) return 0;
+        if(sum%2!=0) return 0;
+        sum=sum/2;
+        dp[0]=1;
+        for(int i=0;i<nums.size();i++)
+        {
+            for(int j=sum;j>=nums[i];j--)
+            {
+                dp[j]+=dp[j-nums[i]];
+            }
+        }
+        return dp[sum];
+    }
+private:
+    int dp[1001];
+};
+```
+
+直接做的话代码如下，可以看到空间复杂度很高！！！
+
+```c++
+class Solution {
+public:
+    int findTargetSumWays(vector<int>& nums, int target) {
+        dp[0][nums[0]+1000]++;
+        dp[0][-nums[0]+1000]++;
+        set.insert(nums[0]+1000);
+        set.insert(-nums[0]+1000);
+        for(int i=1;i<nums.size();i++)
+        {
+            unordered_set<int> set1;
+            for(auto iter=set.begin();iter!=set.end();iter++)
+            {
+                dp[i][nums[i]+(*iter)]+=dp[i-1][*iter];
+                dp[i][-nums[i]+(*iter)]+=dp[i-1][*iter];
+                set1.insert(nums[i]+(*iter));
+                set1.insert(-nums[i]+(*iter));
+            }
+            set=set1;
+        }
+        return dp[nums.size()-1][target+1000];
+    }
+private:
+    int dp[21][2001];
+    unordered_set<int> set;
+};
+```
+
+* 打家劫舍Ⅱ
+
+你是一个专业的小偷，计划偷窃沿街的房屋，每间房内都藏有一定的现金。这个地方所有的房屋都 **围成一圈** ，这意味着第一个房屋和最后一个房屋是紧挨着的。同时，相邻的房屋装有相互连通的防盗系统，**如果两间相邻的房屋在同一晚上被小偷闯入，系统会自动报警** 。
+
+给定一个代表每个房屋存放金额的非负整数数组，计算你 **在不触动警报装置的情况下** ，今晚能够偷窃到的最高金额。
+
+**思路：**要把这道题的情况分开来考虑，start到end-1以及start+1到end这两种情况，分别考虑这两种情况的最大值，最后再取最大值即可。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int robtraverse(int start,int end,vector<int>& nums)
+    {
+        if(start==end) return nums[start];
+        else if(start==(end-1)) return max(nums[start],nums[end]);
+        else
+        {
+            dp[start]=nums[start];
+            dp[start+1]=max(nums[start],nums[start+1]);
+            for(int i=(start+2);i<=end;i++)
+            {
+                dp[i]=max(dp[i-1],dp[i-2]+nums[i]);
+            }
+            return dp[end];
+        }
+    }
+
+    int rob(vector<int>& nums) {
+        if(nums.size()==1) return nums[0];
+        return max(robtraverse(0,nums.size()-2,nums),robtraverse(1,nums.size()-1,nums));
+    }
+private:
+    int dp[101];
+};
+```
+
+* 打家劫舍Ⅲ
+
+小偷又发现了一个新的可行窃的地区。这个地区只有一个入口，我们称之为 `root` 。
+
+除了 `root` 之外，每栋房子有且只有一个“父“房子与之相连。一番侦察之后，聪明的小偷意识到“这个地方的所有房屋的排列类似于一棵二叉树”。 如果 **两个直接相连的房子在同一天晚上被打劫** ，房屋将自动报警。
+
+给定二叉树的 `root` 。返回 ***在不触动警报的情况下** ，小偷能够盗取的最高金额* 。
+
+**思路：**记忆化搜索很容易想到，主要是还有一种方法为树形dp，在递归过程中维护一个dp数组，有两个元素，分别表示要不要选当前元素，这样的树形dp也能够保证每个点只遍历一次，运用后序遍历即可。
+
+代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<int> treedp(TreeNode* cur)
+    {
+        if(cur==nullptr) return vector<int>(2,0);
+        vector<int> lson = treedp(cur->left);
+        vector<int> rson = treedp(cur->right);
+        vector<int> ret(2,0);
+        ret[0]=max(lson[0],lson[1])+max(rson[0],rson[1]);
+        ret[1]=lson[0]+rson[0]+cur->val;
+        return ret;
+    }
+    int rob(TreeNode* root) {
+        vector<int> v = treedp(root);
+        return max(v[0],v[1]);
+    }
+};
+```
+
+记忆化搜索的代码如下：
+
+```c++
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    int traverse(TreeNode* cur)
+    {
+        if(!cur) return 0;
+        if(cur->left==nullptr&&cur->right==nullptr) return cur->val;
+        int lson=0;
+        int rson=0;
+        int llson,lrson,rlson,rrson;
+        llson=lrson=rlson=rrson=0;
+        if(cur->left!=nullptr)
+        {
+            if(map.find(cur->left)!=map.end()) lson=map[cur->left];
+            else 
+            {
+                lson=traverse(cur->left);
+                map[cur->left]=lson;
+            }
+            if(cur->left->left==nullptr) ;
+            else if(map.find(cur->left->left)!=map.end()) llson=map[cur->left->left];
+            else
+            {
+                llson=traverse(cur->left->left);
+                map[cur->left->left]=llson;
+            }
+            if(cur->left->right==nullptr) ;
+            else if(map.find(cur->left->right)!=map.end()) lrson=map[cur->left->right];
+            else
+            {
+                lrson=traverse(cur->left->right);
+                map[cur->left->right]=lrson;
+            }
+        }
+        
+        
+        if(cur->right!=nullptr)
+        {
+            if(map.find(cur->right)!=map.end()) rson=map[cur->right];
+            else 
+            {
+                rson=traverse(cur->right);
+                map[cur->right]=rson;
+            }
+            if(cur->right->left==nullptr) ;
+            else if(map.find(cur->right->left)!=map.end()) rlson=map[cur->right->left];
+            else
+            {
+                rlson=traverse(cur->right->left);
+                map[cur->right->left]=rlson;
+            }
+            if(cur->right->right==nullptr) ;
+            else if(map.find(cur->right->right)!=map.end()) rrson=map[cur->right->right];
+            else
+            {
+                rrson=traverse(cur->right->right);
+                map[cur->right->right]=rrson;
+            }
+        }
+        return max(lson+rson,llson+lrson+rlson+rrson+cur->val);
+    }
+    int rob(TreeNode* root) {
+        if(!root) return 0;
+        if(root->left==nullptr&&root->right==nullptr) return root->val;
+        map.clear();
+        int ret = traverse(root);
+        return ret;
+    }
+private:
+    unordered_map<TreeNode*,int> map;
+};
+```
+
