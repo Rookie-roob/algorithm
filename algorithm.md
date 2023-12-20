@@ -2490,3 +2490,984 @@ private:
 };
 ```
 
+* 最长递增子序列
+
+给你一个整数数组 `nums` ，找到其中最长严格递增子序列的长度。
+
+**子序列** 是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。例如，`[3,6,2,7]` 是数组 `[0,3,1,6,2,2,7]` 的子序列。
+
+**思路：**想到O(n^2)时间复杂度的dp算法不难，主要是想到O(nlogn)时间复杂度的做法！维护一个tail数组，tail[i]表示长度(i+1)的上升子序列的结尾最小值，该tail数组是单调递增的（利用反证法），同时相同长度的上升子序列肯定是结尾值越小的更容易在遍历后面的值时增长长度（贪心的思想）。那么只要在遍历过程中，如果tail的最后一个值小于当前遍历的值，则tail数组增加一个长度，即将这个值加入到tail数组中；反之则在tail数组中找到第一个大于等于该值的位置，若相等则不变化，若严格大于，则进行替换，替换之前为v[i]>num>v[i-1]，替换v[i]，使得该位置的数更小，更有利于后面的增长。
+
+得到的代码如下：
+
+```c++
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        vector<int> v;
+        v.push_back(nums[0]);
+        for(int i=1;i<nums.size();i++)
+        {
+            if(nums[i]>v[v.size()-1])
+                v.push_back(nums[i]);
+            else
+            {
+                int l=0;
+                int r=v.size()-1;
+                int mid;
+                while(l<r)
+                {
+                    mid = (l+r)>>1;
+                    if(v[mid]>=nums[i]) r=mid;
+                    else l=mid+1;
+                }
+                if(v[l]==nums[i])  ;
+                else
+                {
+                    v[l]=nums[i];
+                }
+            }
+        }
+        return v.size();
+    }
+};
+```
+
+* 不同的子序列
+
+给你两个字符串 `s` 和 `t` ，统计并返回在 `s` 的 **子序列** 中 `t` 出现的个数，结果需要对 109 + 7 取模。
+
+**思路：**可以想到是一道动态规划题，也可以想到dp数组的表示，主要是递推公式怎么想。
+
+当s[i - 1] 与 t[j - 1]相等时，dp\[i][j] = dp\[i - 1][j - 1] + dp\[i - 1][j];
+
+当s[i - 1] 与 t[j - 1]不相等时，dp\[i][j]只有一部分组成，不用s[i - 1]来匹配（就是模拟在s中删除这个元素），即：dp\[i - 1][j]
+
+代码可以得到如下：
+
+```c++
+const int N = 1e9+7;
+class Solution {
+public:
+    int numDistinct(string s, string t) {
+        int ssize = s.length();
+        int tsize = t.length();
+        vector<vector<int>> dp(s.length()+1,vector<int>(t.length()+1,0));
+        for(int i=0;i<=ssize;i++) dp[i][0]=1;
+        for(int i=1;i<=ssize;i++)
+        {
+            for(int j=1;j<=tsize;j++)
+            {
+                if(s[i-1]==t[j-1])
+                {
+                    dp[i][j]=(dp[i-1][j-1]+dp[i-1][j])%N;
+                }
+                else
+                    dp[i][j]=dp[i-1][j];
+            }
+        }
+        return dp[ssize][tsize];
+    }
+};
+```
+
+* 回文子串
+
+给你一个字符串 `s` ，请你统计并返回这个字符串中 **回文子串** 的数目。
+
+**回文字符串** 是正着读和倒过来读一样的字符串。
+
+**子字符串** 是字符串中的由连续字符组成的一个序列。
+
+具有不同开始位置或结束位置的子串，即使是由相同的字符组成，也会被视作不同的子串。
+
+**思路：**主要是要想到这里的dp数组为bool值，不要死脑筋地去想dp数组直接得到最后的答案，运用dp数组去判断是否为回文子串，若是，则增加数目。
+
+在确定递推公式时，就要分析如下几种情况。
+
+整体上是两种，就是s[i]与s[j]相等，s[i]与s[j]不相等这两种。
+
+当s[i]与s[j]不相等，那没啥好说的了，dp\[i][j]一定是false。
+
+当s[i]与s[j]相等时，这就复杂一些了，有如下三种情况
+
+情况一：下标i 与 j相同，同一个字符例如a，当然是回文子串
+
+情况二：下标i 与 j相差为1，例如aa，也是回文子串
+
+情况三：下标：i 与 j相差大于1的时候，例如cabac，此时s[i]与s[j]已经相同了，我们看i到j区间是不是回文子串就看aba是不是回文就可以了，那么aba的区间就是 i+1 与 j-1区间，这个区间是不是回文就看dp\[i + 1][j - 1]是否为true。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int countSubstrings(string s) {
+        //先判断回文子串
+        int slen = s.length();
+        vector<vector<bool>> dp(s.length(),vector<bool>(s.length(),true));
+        int cnt=0;
+        for(int i=(s.length()-1);i>=0;i--)
+        {
+            for(int j=0;j<s.length();j++)
+            {
+                if(j>=i)
+                {
+                    if(s[i]==s[j]&&(j-i)<=1)
+                    {
+                        dp[i][j]=true;
+                        cnt++;
+                    }
+                    else if(s[i]==s[j])
+                    {
+                        for(int x=i,y=j;x<=y;x++,y--)
+                        {
+                            if(s[x]!=s[y])
+                            {
+                                dp[i][j]=false;
+                                break;
+                            }
+                        }
+                        if(dp[i][j]) cnt++;
+                    }
+                    else
+                    {
+                        dp[i][j]=false;
+                    }
+                }
+            }
+        }
+        return cnt;
+    }
+};
+```
+
+* 每日温度
+
+给定一个整数数组 `temperatures` ，表示每天的温度，返回一个数组 `answer` ，其中 `answer[i]` 是指对于第 `i` 天，下一个更高温度出现在几天后。如果气温在这之后都不会升高，请在该位置用 `0` 来代替。
+
+**思路：**可以想到用单调栈做，但是主要是怎么构造单调栈，这里我们放到单调栈里的要是下标，这样更好进行计算，单调栈从栈顶到栈底为单调增（相等也算，注意是放的下标，严格来说是下标对应的值单调增）。当前遍历到的值是去回填在栈中数据对应的答案值的。
+
+合理性也很容易得到证明，栈中的数据从栈顶到栈底单调增，因此这些值对应的答案数据还没有进行填入，当遍历到当前的数，若小于等于栈顶的数，则入栈，肯定不能回填的；大于栈顶的数，则不断出栈（只要栈顶的数小于当前值），直到栈为空或者栈顶的数大于等于当前值，将出栈的数进行回填答案。同时这个题目比较巧妙的一个点是入栈下标，对应的值再去给定的数组去取就好。
+
+代码容易得到如下：
+
+```c++
+class Solution {
+public:
+    vector<int> dailyTemperatures(vector<int>& temperatures) {
+        vector<int> ans(temperatures.size(),0);
+        stack<int> st;
+        st.push(0);
+        for(int i=1;i<temperatures.size();i++)
+        {
+            if(temperatures[i]<=temperatures[st.top()])
+                st.push(i);
+            else
+            {
+                while((!st.empty())&&(temperatures[i]>temperatures[st.top()]))
+                {
+                    ans[st.top()]=i-st.top();
+                    st.pop();
+                }
+                st.push(i);
+            }
+        }
+        return ans;
+    }
+};
+```
+
+* 接雨水
+
+给定 `n` 个非负整数表示每个宽度为 `1` 的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。
+
+**思路：**首先想到单调栈去做。要注意用单调栈做的思路是要横着看面积的，也就是说找到一个被夹着的mid，分别计算宽度和高度，对于宽度，这里是栈中的元素到当前遍历到的元素，而高度是栈中当前元素和遍历到的元素高度的最小值与mid高度的差，**注意这里是要横着看！！！**
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        stack<int> st;
+        st.push(0);
+        int cnt=0;
+        for(int i=1;i<height.size();i++)
+        {
+            if(height[i]<height[st.top()])
+            {
+                st.push(i);
+            }
+            else if(height[i]==height[st.top()])
+            {
+                st.pop();
+                st.push(i);
+            }
+            else
+            {
+               while((!st.empty())&&(height[i]>height[st.top()]))
+               {
+                   int mid = st.top();
+                   st.pop();
+                   if(!st.empty())
+                   {
+                       int w = i-st.top()-1;
+                       int h = min(height[i],height[st.top()])-height[mid];
+                       cnt+=w*h;
+                   }
+               }
+               st.push(i);
+            }
+        }
+        return cnt;
+    }
+};
+```
+
+还有一种很巧妙的思路是：每个柱子能盛水的深度，取决于min(左边最高，右边最高）
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int trap(vector<int>& height) {
+        vector<int> rmax(height.size(),0);
+        for(int i=height.size()-2,m=height[height.size()-1];i>=0;i--)
+        {
+            rmax[i]=m;
+            m=max(m,height[i]);
+        }
+        int cnt=0;
+        for(int i=1,m=height[0];i<(height.size()-1);i++)
+        {
+            if(min(m,rmax[i])>height[i])
+                cnt+=min(m,rmax[i])-height[i];
+            m=max(m,height[i]);
+        }
+        return cnt;
+    }
+};
+```
+
+* 柱状图中最大的矩形
+
+给定 *n* 个非负整数，用来表示柱状图中各个柱子的高度。每个柱子彼此相邻，且宽度为 1 。
+
+求在该柱状图中，能够勾勒出来的矩形的最大面积。
+
+**思路：**和接雨水的单调栈做法相似，在栈中要放的元素从栈顶到栈底递减，同时要在原来的数组头和尾放0，防止漏算！！！其他的思想都一样，这里着重讲一下算w的时候，为啥还要算left，这里是为了防止有很多和mid高度相同的柱形，故要按照left来计算。同时这个题其实是可以保证栈底肯定是0！！！
+
+**主要思想：**
+
+遍历每个高度，是要以当前高度为基准，寻找最大的宽度 组成最大的矩形面积那就是要找左边第一个小于当前高度的下标left，再找右边第一个小于当前高度的下标right 那宽度就是这两个下标之间的距离了 但是要排除这两个下标 所以是right-left-1 用单调栈就可以很方便确定这两个边界了
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        heights.insert(heights.begin(),0);
+        heights.push_back(0);
+        stack<int> st;
+        st.push(0);
+        int s=0;
+        for(int i=1;i<heights.size();i++)
+        {
+            if(heights[i]>heights[st.top()])
+            {
+                st.push(i);
+            }
+            else if(heights[i]==heights[st.top()])
+            {
+                st.pop();
+                st.push(i);
+            }
+            else
+            {
+                while((!st.empty())&&heights[i]<heights[st.top()])
+                {
+                    int mid = st.top();
+                    st.pop();
+                    if(!st.empty())
+                    {
+                        int left = st.top();
+                        int h = heights[mid];
+                        int w = i-left-1;//再取一次left是有意义的，因为如果有很多mid相等值的话，此时算w要根据left来算。
+                        s=max(s,h*w);
+                    }
+                }
+                st.push(i);
+            }
+        }
+        return s;
+    }
+};
+```
+
+* 岛屿数量
+
+给你一个由 `'1'`（陆地）和 `'0'`（水）组成的的二维网格，请你计算网格中岛屿的数量。
+
+岛屿总是被水包围，并且每座岛屿只能由水平方向和/或竖直方向上相邻的陆地连接形成。
+
+此外，你可以假设该网格的四条边均被水包围。
+
+**思路：**下面分为广度和深度搜索来进行讲解。这里首先不能死脑筋，在搜寻同一个岛屿时，用广度或者深度搜索，再加上辅助的check数组，而不能一开始上来就是无脑在整个题目情境下用广度或者深度搜索算法。还有，在广度搜索时，加入到队列前要先置check对应位置为true，不然会重复加入队列，造成超时！！！！
+
+广度搜索的代码如下：
+
+```c++
+class Solution {
+public:
+    void bfs(int r,int c,vector<vector<char>>& grid,vector<vector<bool>>& check)
+    {
+        int row[4] = {0,1,0,-1};
+        int col[4] = {1,0,-1,0};
+        pair<int,int> p;
+        queue<pair<int,int>> qu;
+        qu.push({r,c});
+        check[r][c]=true;
+        while(!qu.empty())
+        {
+            p=qu.front();
+            qu.pop();
+            r=p.first; c=p.second;
+            for(int i=0;i<4;i++)
+            {
+                if(((r+row[i])>=grid.size())||((c+col[i])>=grid[0].size())||((r+row[i])<0)||((c+col[i])<0))
+                {
+                    continue;
+                }
+                else if(grid[r+row[i]][c+col[i]]=='0'||check[r+row[i]][c+col[i]]==true)
+                {
+                    continue;
+                }
+                else
+                {
+                    check[r+row[i]][c+col[i]]=true;
+                    qu.push({r+row[i],c+col[i]});
+                }
+            }
+        }
+    }
+    int numIslands(vector<vector<char>>& grid) {
+     vector<vector<bool>> check(grid.size(),vector<bool>(grid[0].size(),false));
+     int cnt = 0;
+     for(int i=0;i<grid.size();i++)
+     {
+         for(int j=0;j<grid[0].size();j++)
+         {
+             if((!check[i][j])&&(grid[i][j]=='1'))
+             {
+                 cnt++;
+                 bfs(i,j,grid,check);
+             }
+         }
+     }
+     return cnt;   
+    }
+};
+```
+
+深度搜索的代码如下：
+
+```c++
+class Solution {
+public:
+    void dfs(int r,int c,vector<vector<char>>& grid,vector<vector<bool>>& check)
+    {
+        int row[4] = {0,1,0,-1};
+        int col[4] = {1,0,-1,0};
+        check[r][c]=true;
+        for(int i=0;i<4;i++)
+        {
+            if(((r+row[i])>=grid.size())||((c+col[i])>=grid[0].size())||((r+row[i])<0)||((c+col[i])<0))
+            {
+                continue;
+            }
+            else if(grid[r+row[i]][c+col[i]]=='0'||check[r+row[i]][c+col[i]]==true)
+            {
+                continue;
+            }
+            else
+            {
+                dfs(r+row[i],c+col[i],grid,check);
+            }
+        }
+    }
+    int numIslands(vector<vector<char>>& grid) {
+     vector<vector<bool>> check(grid.size(),vector<bool>(grid[0].size(),false));
+     int cnt = 0;
+     for(int i=0;i<grid.size();i++)
+     {
+         for(int j=0;j<grid[0].size();j++)
+         {
+             if((!check[i][j])&&(grid[i][j]=='1'))
+             {
+                 cnt++;
+                 dfs(i,j,grid,check);
+             }
+         }
+     }
+     return cnt;   
+    }
+};
+```
+
+* 最大人工岛
+
+给你一个大小为 `n x n` 二进制矩阵 `grid` 。**最多** 只能将一格 `0` 变成 `1` 。
+
+返回执行此操作后，`grid` 中最大的岛屿面积是多少？
+
+**岛屿** 由一组上、下、左、右四个方向相连的 `1` 形成。
+
+**思路：**采用暴力的方式，时间复杂度为O(n^4)。采用下面的思想：先记录下每个连通的1区域的面积（HashMap：编号-->面积），记录的方式当然是深度遍历或者是广度遍历，而后再次遍历，当前点的格子值为0时，如果周围有连通的岛屿（用编号进行判断），则加上其面积，最后与当前最大值进行比较。按照这样的方式，得到最后的结果。
+
+这里还有一个优化的点，就是 可以不用 visited数组，因为有mark来标记，所以遍历过的grid\[i][j]是不等于1的。
+
+此外，代码中当 ```ans == Integer.MIN_VALUE``` 说明矩阵数组中不存在 0，全都是有效区域，返回数组大小即可
+
+代码如下：
+
+```java
+class Solution {
+    public static final int[][] position = {{-1,0},{1,0},{0,-1},{0,1}};
+    public int dfs(int[][] grid,int row,int col,int mark)
+    {
+        int ans = 1;
+        grid[row][col]=mark;
+        for(int i=0;i<4;i++)
+        {
+            int r = row+position[i][0];
+            int c = col+position[i][1];
+            if(r<0||c<0||r>=grid.length||c>=grid[0].length) continue;
+            else if(grid[r][c]==1) 
+            {
+                ans+=dfs(grid,r,c,mark);
+            }
+        }
+        return ans;
+    }
+    public int largestIsland(int[][] grid) {
+        int mark = 2;
+        HashMap<Integer,Integer> map = new HashMap<>();
+        for(int i=0;i<grid.length;i++)
+        {
+            for(int j=0;j<grid[0].length;j++)
+            {
+                if(grid[i][j]==1)
+                {
+                    int s = dfs(grid,i,j,mark);
+                    map.put(mark++,s);
+                }
+            }
+        }
+        int maxres = Integer.MIN_VALUE;
+        int tmp;
+        for(int i=0;i<grid.length;i++)
+        {
+            for(int j=0;j<grid[0].length;j++)
+            {
+                if(grid[i][j]==0)
+                {
+                    
+                    tmp=1;
+                    Set<Integer> set = new HashSet<>();
+                    for(int k=0;k<4;k++)
+                    {
+                        int r = i+position[k][0];
+                        int c = j+position[k][1];
+                        if(r<0||c<0||r>=grid.length||c>=grid[0].length) continue;
+                        if(grid[r][c]>1&&(!set.contains(grid[r][c])))
+                        {
+                            tmp+=map.get(grid[r][c]);
+                            set.add(grid[r][c]);
+                        }
+                            
+                    }
+                    maxres=Math.max(maxres,tmp);
+                }
+            }
+        }
+        return maxres==Integer.MIN_VALUE?grid.length*grid.length:maxres;
+    }
+}
+```
+
+* 单词接龙
+
+字典 `wordList` 中从单词 `beginWord` 和 `endWord` 的 **转换序列** 是一个按下述规格形成的序列 `beginWord -> s1 -> s2 -> ... -> sk`：
+
+- 每一对相邻的单词只差一个字母。
+-  对于 `1 <= i <= k` 时，每个 `si` 都在 `wordList` 中。注意， `beginWord` 不需要在 `wordList` 中。
+- `sk == endWord`
+
+给你两个单词 `beginWord` 和 `endWord` 和一个字典 `wordList` ，返回 *从 `beginWord` 到 `endWord` 的 **最短转换序列** 中的 **单词数目*** 。如果不存在这样的转换序列，返回 `0` 。
+
+**思路：**运用广度搜索的思想，用map存储遍历到的点。这里新string的生成方式可以由原来的string，改变每一位（str[i]='a'+j,0=<j<26）。
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        unordered_set<string> set(wordList.begin(),wordList.end());
+        if(set.find(endWord)==set.end()) return 0;
+        unordered_map<string,int> map;
+        map[beginWord]=1;
+        queue<string> q;
+        q.push(beginWord);
+        while(!q.empty())
+        {
+            string newstr = q.front();
+            q.pop();
+            int path = map[newstr];
+            for(int i=0;i<newstr.length();i++)
+            {
+                string newstr1=newstr;
+                for(int j=0;j<26;j++)
+                {
+                    newstr1[i]='a'+j;
+                    if(set.find(newstr1)==set.end()) continue;
+                    else if(map.find(newstr1)!=map.end()) continue;
+                    else if(newstr1==endWord) return path+1;
+                    else
+                    {
+                        map[newstr1]=path+1;
+                        q.push(newstr1);
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+};
+```
+
+* 无重复字符的最长子串
+
+给定一个字符串 `s` ，请你找出其中不含有重复字符的 **最长子串** 的长度。
+
+**思路：**运用类似滑动窗口，双指针的思想，快指针依次遍历字符串，慢指针和快指针之间的子串为满足条件的子串。若当前快指针和慢指针之间的子串出现了重叠，也就是说我们要把慢指针移动到快指针所指的字符之后一位。
+
+这里有一种巧妙的做法，用map来记录，因为java中HashMap插入相同key会把前面的值给覆盖，这种做法中，唯一有一点，slow要用取max！！！不能忘记取max！！！
+
+left = Math.max(left,map.get(s.charAt(i)) + 1);
+**left是子串的起始位置**
+遇到重复元素的就把重复元素下标+1作为**子串的起始位置left**，即 left = map.get(s.charAt(i)) + 1； 但由于有 'abba' 这样的字符，当 ‘b’ 重复时，left 已经记作2，
+再次循环，遇到重复元素 ‘a’ 时 , left就会被记作1，这样**子串起始位置left就从2倒退回1了** ，乱掉了。
+
+所以为了再次循环到重复元素 ‘a’ 时，**防止left 子串起始位置不倒回去**，保持之前重复元素 ‘b’的值,
+就对比一下老的left 和**新的left = map.get(s.charAt(i)) + 1**
+谁大，就是正确的left , 即left = Math.max(left,map.get(s.charAt(i)) + 1);
+
+代码如下：
+
+```java
+class Solution {
+    public int lengthOfLongestSubstring(String s) {
+        HashMap<Character,Integer> hm = new HashMap<>();
+        int slow = -1;
+        int res = 0;
+        for(int i=0;i<s.length();i++)
+        {
+            if(hm.containsKey(s.charAt(i)))
+            {
+                slow = Math.max(slow,hm.get(s.charAt(i)));
+            }
+            hm.put(s.charAt(i),i);
+            //System.out.println("i: "+i+" slow: "+slow);
+            res = Math.max(res,i-slow);
+        }
+        return res;
+    }
+}
+```
+
+用HashSet做的做法如下：
+
+```java
+class Solution {
+    public int lengthOfLongestSubstring(String s) {
+        if(s.length()==0) return 0;
+        int slow = 0;
+        int res = 1;
+        HashSet<Character> hs = new HashSet<>();
+        hs.add(s.charAt(0));
+        for(int i=1;i<s.length();i++)
+        {
+            if(hs.isEmpty())
+            {
+                hs.add(s.charAt(i));
+            }
+            else if(!hs.contains(s.charAt(i)))
+            {
+                hs.add(s.charAt(i));
+                res=Math.max(res,hs.size());
+            }
+            else
+            {
+                while(s.charAt(slow)!=s.charAt(i))
+                {
+                    hs.remove(s.charAt(slow));
+                    slow++;
+                }
+                slow++;
+            }
+        }
+        return res;
+    }
+}
+```
+
+* 寻找峰值
+
+峰值元素是指其值严格大于左右相邻值的元素。
+
+给你一个整数数组 `nums`，找到峰值元素并返回其索引。数组可能包含多个峰值，在这种情况下，返回 **任何一个峰值** 所在位置即可。
+
+你可以假设 `nums[-1] = nums[n] = -∞` 。
+
+你必须实现时间复杂度为 `O(log n)` 的算法来解决此问题。
+
+**思路：**二分法做法正确的前提有两个：
+
+对于任意数组而言，一定存在峰值（一定有解）；
+二分不会错过峰值。
+我们分别证明一下。
+
+证明 1：对于任意数组而言，一定存在峰值（一定有解）
+
+根据题意，我们有「数据长度至少为 1」、「越过数组两边看做负无穷」和「相邻元素不相等」的起始条件。
+
+我们可以根据数组长度是否为 1进行分情况讨论：
+
+数组长度为 1，由于边界看做负无穷，此时峰值为该唯一元素的下标；
+
+数组长度大于 1，从最左边的元素 nums[0] 开始出发考虑：
+
+如果 nums[0]>nums[1]，那么最左边元素 nums[0] 就是峰值（结合左边界为负无穷）；
+如果 nums[0]<nums[1]，由于已经存在明确的 nums[0] 和 nums[1]大小关系，我们将 nums[0]看做边界， nums[1]看做新的最左侧元素，继续往右进行分析：
+如果在到达数组最右侧前，出现 nums[i]>nums[i+1]，说明存在峰值位置 i（当我们考虑到 nums[i]，必然满足 nums[i] 大于前一元素的前提条件，当然前一元素可能是原始左边界）；
+到达数组最右侧，还没出现 nums[i]>nums[i+1]，说明数组严格递增。此时结合右边界可以看做负无穷，可判定 nums[n−1]为峰值。
+综上，我们证明了无论何种情况，数组必然存在峰值。
+
+证明 2 ：二分不会错过峰值
+
+其实基于「证明 1」，我们很容易就可以推理出「证明 2」的正确性。
+
+整理一下由「证明 1」得出的推理：如果当前位置大于其左边界或者右边界，那么在当前位置的右边或左边必然存在峰值。
+
+换句话说，对于一个满足 nums[x]>nums[x−1] 的位置，x 的右边一定存在峰值；或对于一个满足 nums[x]>nums[x+1] 的位置，x 的左边一定存在峰值。
+
+因此这里的「二段性」其实是指：在以 mid为分割点的数组上，根据 nums[mid]与 nums[mid±1]的大小关系，可以确定其中一段满足「必然有解」，另外一段不满足「必然有解」（可能有解，可能无解）。
+
+代码如下：
+
+```java
+class Solution {
+    public int findPeakElement(int[] nums) {
+        int l = 0;
+        int r = nums.length-1;
+        while(l<r)
+        {
+            int mid = (l+r)>>1;
+            if(nums[mid]>nums[mid+1]) r=mid;
+            else l=(mid+1);
+        }
+        return l;
+    }
+}
+```
+
+* 寻找峰值Ⅱ
+
+一个 2D 网格中的 **峰值** 是指那些 **严格大于** 其相邻格子(上、下、左、右)的元素。
+
+给你一个 **从 0 开始编号** 的 `m x n` 矩阵 `mat` ，其中任意两个相邻格子的值都 **不相同** 。找出 **任意一个 峰值** `mat[i][j]` 并 **返回其位置** `[i,j]` 。
+
+你可以假设整个矩阵周边环绕着一圈值为 `-1` 的格子。
+
+要求必须写出时间复杂度为 `O(m log(n))` 或 `O(n log(m))` 的算法
+
+**思路：**暴力的方法：从左上角出发，每次往四周比当前位置大的数字走，直到走到一个峰顶。此方法最坏情况下的时间复杂度是 O(mn)。
+
+对于本题，
+
+![](picture\find-summit.png)
+
+综上所述，我们可以二分包含峰顶的行号 i：
+
+如果 mat[i] 的最大值比它下面的相邻数字小，则存在一个峰顶，其行号大于 i。缩小二分范围，更新二分区间左端点 left。
+如果 mat[i] 的最大值比它下面的相邻数字大，则存在一个峰顶，其行号小于或等于 i。缩小二分范围，更新二分区间右端点 right。
+
+代码如下：
+
+```java
+class Solution {
+    public int[] findPeakGrid(int[][] mat) {
+        int l = 0;
+        int r = mat.length-1;
+        int idx = 0;
+        while(l<r)
+        {
+            int mid = (l+r)>>1;
+            int tmpmax = mat[mid][0];
+            idx = 0;
+            for(int j=1;j<mat[0].length;j++)
+            {
+                if(mat[mid][j]>tmpmax)
+                {
+                    tmpmax=mat[mid][j];
+                    idx=j;
+                }
+            }
+            if(mat[mid][idx]>mat[mid+1][idx]) r=mid;
+            else l=(mid+1);
+        }
+        return new int[]{l,idx};
+    }
+}
+```
+
+* 合并两个升序链表
+
+将两个升序链表合并为一个新的 **升序** 链表并返回。新链表是通过拼接给定的两个链表的所有节点组成的。 
+
+**思路：**不要想着把链表一下子合并到原先的链表l1，l2中（形式上），而是可以新开一个dummyhead（为了解决两个头节点的大小问题），而后cur指向dummyhead，再用双指针遍历两个链表，取最小的放到这个cur的后面，cur=cur->next。
+
+代码如下：
+
+```java
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
+        if(list1==null) return list2;
+        if(list2==null) return list1;
+        ListNode dummyhead = new ListNode();
+        ListNode cur = dummyhead;
+        ListNode cur1=list1;
+        ListNode cur2=list2;
+        while(cur1!=null&&cur2!=null)
+        {
+            if(cur1.val<cur2.val)
+            {
+                cur.next=cur1;
+                cur1=cur1.next;
+            }   
+            else
+            {
+                cur.next=cur2;
+                cur2=cur2.next;
+            }  
+            cur=cur.next;
+        }
+        if(cur1!=null)
+            cur.next=cur1;
+        else
+            cur.next=cur2;
+        return dummyhead.next;
+    }
+}
+```
+
+* 合并k个升序链表
+
+给你一个链表数组，每个链表都已经按升序排列。
+
+请你将所有链表合并到一个升序链表中，返回合并后的链表。
+
+**思路：**一般的暴力做法时间复杂度会达到O（k^2*n）。这个合并可以想到用归并的思想来做，同时对于暴力方法的优化可以采取优先队列来做，这两个方法的时间复杂度最后都会达到O(logk\*k\*n)。
+
+归并法的方法如下：
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* merge(ListNode* l1,ListNode* l2)
+    {
+        ListNode* dummyhead = new ListNode();
+        ListNode* cur=dummyhead;
+        ListNode* cur1=l1;ListNode* cur2 = l2;
+        while(cur1&&cur2)
+        {
+            if(cur1->val<cur2->val)
+            {
+                cur->next=cur1;
+                cur1=cur1->next;
+            }
+            else
+            {
+                cur->next=cur2;
+                cur2=cur2->next;
+            }
+            cur=cur->next;
+        }
+        if(cur1)
+            cur->next=cur1;
+        else
+            cur->next=cur2;
+        return dummyhead->next;
+    }
+    ListNode* mergesort(vector<ListNode*>& lists,int l,int r)
+    {
+        if(l==r) return lists[l];
+        if(l>r) return nullptr;
+        int mid = (l+r)>>1;
+        return merge(mergesort(lists,l,mid),mergesort(lists,mid+1,r));
+    }
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        return mergesort(lists,0,lists.size()-1);
+    }
+};
+```
+
+优先队列的代码如下：
+
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    struct Node 
+    {
+        int val;
+        ListNode* ptr;
+        bool operator < (const Node& n) const {
+            return val>n.val;
+        }
+    };
+    priority_queue<Node> q;
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        for(auto p:lists)
+        {
+            if(p)
+                q.push({p->val,p});
+        }
+        ListNode head;
+        ListNode* dummyhead = &head;
+        ListNode* cur=dummyhead;
+        while(!q.empty())
+        {
+            auto p= q.top();q.pop();
+            cur->next=p.ptr;
+            cur=cur->next;
+            if((p.ptr)->next)
+                q.push({((p.ptr)->next)->val,(p.ptr)->next});
+        }
+        return dummyhead->next;
+    }
+};
+```
+
+* 解数独
+
+编写一个程序，通过填充空格来解决数独问题。
+
+数独的解法需 **遵循如下规则**：
+
+1. 数字 `1-9` 在每一行只能出现一次。
+2. 数字 `1-9` 在每一列只能出现一次。
+3. 数字 `1-9` 在每一个以粗实线分隔的 `3x3` 宫内只能出现一次。（请参考示例图）
+
+数独部分空格内已填入了数字，空白格用 `'.'` 表示。
+
+**思路：**可以想到用dfs方法进行，但是有几个细节。首先，要注意回溯，其次，还要进行剪枝，进行行，列，以及小正方形的比较时，要与所有的行内，列内，小正方形内的数值进行比较，而不能简单地与之前的进行比较，这样会超时！！！
+
+代码如下：
+
+```c++
+class Solution {
+public:
+    bool isValid(vector<vector<char>>& board,char c,int row,int col)
+    {
+        for(int i=0;i<9;i++)
+        {
+            if(board[row][i]==c) return false;
+        }
+        for(int i=0;i<9;i++)
+        {
+            if(board[i][col]==c) return false;
+        }
+        int rowstart = row/3*3;
+        int colstart = col/3*3;
+        for(int i=rowstart;i<=(rowstart+2);i++)
+        {
+            for(int j=colstart;j<=(colstart+2);j++)
+            {
+                if(board[i][j]==c)
+                    return false;
+            }
+        }
+        return true;
+    }
+    bool dfs(vector<vector<char>>& board,int row,int col)
+    {
+        cout<<row<<"  "<<col<<endl;
+        if(col==(board[0].size()))
+        {
+            col=0;
+            row++;
+        }
+        if(row==board.size())
+        {
+            return true;
+        }
+        else if(board[row][col]>='1'&&board[row][col]<='9')
+        {
+            return dfs(board,row,col+1);
+        }
+        else
+        {
+            for(int i=0;i<9;i++)
+            {
+                char c = '1'+i;
+                if(isValid(board,c,row,col))
+                {
+                    board[row][col]=c;
+                    if(dfs(board,row,col+1))
+                        return true;
+                    board[row][col]='.';
+                }
+            }
+            return false;
+        }
+    }
+    void solveSudoku(vector<vector<char>>& board) {
+        dfs(board,0,0);
+    }
+};
+```
+
